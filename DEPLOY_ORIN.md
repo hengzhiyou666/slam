@@ -11,11 +11,10 @@ The current verified bag is:
 The current verified runtime configuration is:
 
 ```bash
-FAST_LIO/config/omni_dog.yaml
-FAST_LIO/config/omni_dog_qos.yaml
-FAST_LIO/config/omni_dog_relocalization.yaml
-FAST_LIO/launch/omni_dog.launch.py
-FAST_LIO/launch/omni_dog_relocalization.launch.py
+FAST_LIO/config/mapping.yaml
+FAST_LIO/config/relocalizing.yaml
+FAST_LIO/launch/mapping.launch.py
+FAST_LIO/launch/relocalizing.launch.py
 ```
 
 ## 1. Recommended Deployment Strategy
@@ -91,8 +90,11 @@ Commit source and configuration:
 ```text
 FAST_LIO/
 icp_relocalization/
+scripts/
+1_mapping.sh
+2_relocalizing.sh
+setup_env.sh
 README.md
-example.launch.py
 DEPLOY_ORIN.md
 .gitignore
 ```
@@ -158,7 +160,7 @@ source /opt/ros/humble/setup.bash
 source ~/ws_livox/install/setup.bash
 source ~/robot_ws/install/setup.bash
 
-ros2 launch fast_lio omni_dog.launch.py
+ros2 launch fast_lio mapping.launch.py
 ```
 
 Expected input topics:
@@ -190,7 +192,7 @@ mapping.extrinsic_R: identity
 Map saving is enabled in:
 
 ```bash
-FAST_LIO/config/omni_dog.yaml
+FAST_LIO/config/mapping.yaml
 ```
 
 FAST-LIO saves the final map when the node exits cleanly:
@@ -202,13 +204,7 @@ Ctrl-C
 Output:
 
 ```bash
-FAST_LIO/PCD/scans.pcd
-```
-
-For deployment, copy or rename it to:
-
-```bash
-FAST_LIO/PCD/omni_dog_map.pcd
+maps/map.pcd
 ```
 
 ## 7. Mapping With Rosbag And RViz
@@ -220,7 +216,7 @@ source /opt/ros/humble/setup.bash
 source /home/user/ws_livox/install/setup.bash
 source install/setup.bash
 
-ros2 launch fast_lio omni_dog.launch.py
+ros2 launch fast_lio mapping.launch.py
 ```
 
 In another terminal:
@@ -240,8 +236,7 @@ source /opt/ros/humble/setup.bash
 source /home/user/ws_livox/install/setup.bash
 source install/setup.bash
 
-ros2 bag play /home/user/Downloads/rosbag2_2019_09_27-14_51_10 \
-  --qos-profile-overrides-path FAST_LIO/config/omni_dog_qos.yaml
+ros2 bag play /home/user/Downloads/rosbag2_2019_09_27-14_51_10
 ```
 
 Watch these RViz topics:
@@ -266,8 +261,8 @@ source /opt/ros/humble/setup.bash
 source ~/ws_livox/install/setup.bash
 source ~/robot_ws/install/setup.bash
 
-ros2 launch fast_lio omni_dog_relocalization.launch.py \
-  map_path:=/absolute/path/to/omni_dog_map.pcd \
+ros2 launch fast_lio relocalizing.launch.py \
+  map_path:=/absolute/path/to/map.pcd \
   initial_x:=0.0 initial_y:=0.0 initial_z:=0.0 initial_yaw:=0.0
 ```
 
@@ -317,7 +312,7 @@ If you want to package a prebuilt install tree from Orin:
 
 ```bash
 cd ~/robot_ws
-tar -czf omni_slam_orin_install.tar.gz install src/omni_slam/FAST_LIO/PCD/omni_dog_map.pcd
+tar -czf omni_slam_orin_install.tar.gz install src/omni_slam/maps/map.pcd
 ```
 
 On the target:
@@ -416,7 +411,7 @@ This matters for `rosdep install` on Orin.
 The launch/config path style is mostly good now. Keep map path as a launch argument:
 
 ```bash
-map_path:=/absolute/path/to/omni_dog_map.pcd
+map_path:=/absolute/path/to/map.pcd
 ```
 
 Avoid committing machine-specific paths like:
@@ -433,13 +428,13 @@ inside generic launch files.
 For the robot, use a stable path such as:
 
 ```bash
-~/maps/omni_dog_map.pcd
+~/maps/map.pcd
 ```
 
 Then launch:
 
 ```bash
-ros2 launch fast_lio omni_dog_relocalization.launch.py map_path:=$HOME/maps/omni_dog_map.pcd
+ros2 launch fast_lio relocalizing.launch.py map_path:=$HOME/maps/map.pcd
 ```
 
 ### ICP thresholds
@@ -476,13 +471,13 @@ ros2 topic echo /front_lidar/imu --once --field header
 Mapping:
 
 ```bash
-ros2 launch fast_lio omni_dog.launch.py
+ros2 launch fast_lio mapping.launch.py
 ```
 
 Relocalization:
 
 ```bash
-ros2 launch fast_lio omni_dog_relocalization.launch.py map_path:=$HOME/maps/omni_dog_map.pcd
+ros2 launch fast_lio relocalizing.launch.py map_path:=$HOME/maps/map.pcd
 ```
 
 Health checks:
@@ -542,13 +537,13 @@ The downloaded Buildroot SDK provides GCC 9.3.0 and a minimal `aarch64` sysroot,
 Then package the aarch64 runtime install tree:
 
 ```bash
-MAP_PATH=$PWD/FAST_LIO/PCD/omni_dog_map.pcd ./scripts/package_orin_runtime.sh
+MAP_PATH=$PWD/maps/map.pcd ./scripts/package_orin_runtime.sh
 ```
 
 Until that sysroot exists, use the source package path:
 
 ```bash
-MAP_PATH=$PWD/FAST_LIO/PCD/omni_dog_map.pcd ./scripts/package_orin_source.sh
+MAP_PATH=$PWD/maps/map.pcd ./scripts/package_orin_source.sh
 ```
 
 Copy the generated `dist/omni_slam_orin_source_*.tar.gz` to Orin, extract it, and run:
@@ -558,5 +553,5 @@ Copy the generated `dist/omni_slam_orin_source_*.tar.gz` to Orin, extract it, an
 source /opt/ros/humble/setup.bash
 source ~/ws_livox/install/setup.bash
 source install/setup.bash
-ros2 launch fast_lio omni_dog_relocalization.launch.py map_path:=$PWD/FAST_LIO/PCD/omni_dog_map.pcd
+ros2 launch fast_lio relocalizing.launch.py map_path:=$PWD/maps/map.pcd
 ```

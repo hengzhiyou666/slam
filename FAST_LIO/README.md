@@ -112,10 +112,11 @@ Connect to your PC to Livox LiDAR by following  [Livox-ros-driver2 installation]
 ```bash
 cd <ros2_ws>
 . install/setup.bash # use setup.zsh if use zsh
-ros2 launch fast_lio mapping.launch.py config_file:=avia.yaml
+ros2 launch fast_lio mapping.launch.py
 ```
 
-Change `config_file` parameter to other yaml file under config directory as you need.
+The default parameter file is `config/mapping.yaml`. To use another parameter
+file, pass its path with `config_file:=<path>`.
 
 Launch livox ros driver. Use MID360 as an example.
 
@@ -141,7 +142,10 @@ Edit ``` config/avia.yaml ``` to set the below parameters:
 
 ### 3.4 PCD file save
 
-Set ``` pcd_save_enable ``` in launchfile to ``` 1 ```. All the scans (in global frame) will be accumulated and saved to the file ``` FAST_LIO/PCD/scans.pcd ``` after the FAST-LIO is terminated. ```pcl_viewer scans.pcd``` can visualize the point clouds.
+Set `pcd_save.pcd_save_en: true` in `config/mapping.yaml`. All scans in the
+global frame are accumulated and saved to the path configured by
+`map_file_path` when FAST-LIO exits cleanly. The current default output is
+`maps/map.pcd`; run `pcl_viewer maps/map.pcd` to inspect it.
 
 *Tips for pcl_viewer:*
 - change what to visualize/color by pressing keyboard 1,2,3,4,5 when pcl_viewer is running. 
@@ -163,7 +167,7 @@ Files: Can be downloaded from [google drive](https://drive.google.com/drive/fold
 
 Run:
 ```bash
-ros2 launch fast_lio mapping.launch.py config_path:=<path_to_your_config_file>
+ros2 launch fast_lio mapping.launch.py config_file:=<path_to_your_config_file>
 ros2 bag play <your_bag_dir>
 
 ```
