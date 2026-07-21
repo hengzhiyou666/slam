@@ -199,8 +199,9 @@ private:
     static_broadcaster_->sendTransform(transform);
 
     RCLCPP_INFO(
-      get_logger(), "Initialized TF and map-frame odometry: %s -> %s",
-      map_frame_id_.c_str(), odom_frame_id_.c_str());
+      get_logger(), "icp定位成功：x=%.3f，y=%.3f，z=%.3f",
+      map_to_odom_.getOrigin().x(), map_to_odom_.getOrigin().y(),
+      map_to_odom_.getOrigin().z());
   }
 
   void odometry_callback(const nav_msgs::msg::Odometry::SharedPtr message)
@@ -246,6 +247,14 @@ private:
       message->pose.covariance, map_to_odom_.getBasis());
     // Odometry 的 twist 使用 child_frame_id 表达，所以这里保持原值。
     map_odometry_publisher_->publish(map_odometry);
+
+    // FAST-LIO 的里程计频率较高。每次发布 map 坐标系里程计后，
+    // 直接读取同一条消息的坐标，最多每 1000 毫秒打印一行。
+    RCLCPP_INFO_THROTTLE(
+      get_logger(), *get_clock(), 1000,
+      "定位成功：x=%.3f，y=%.3f，z=%.3f",
+      map_odometry.pose.pose.position.x, map_odometry.pose.pose.position.y,
+      map_odometry.pose.pose.position.z);
   }
 
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
