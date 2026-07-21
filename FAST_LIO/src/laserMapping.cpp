@@ -38,7 +38,6 @@
 #include <thread>
 #include <fstream>
 #include <stdexcept>
-#include <csignal>
 #include <chrono>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -172,7 +171,7 @@ double cube_len = 0, HALF_FOV_COS = 0, FOV_DEG = 0, total_distance = 0, lidar_en
 int effct_feat_num = 0, time_log_counter = 0, scan_count = 0, publish_count = 0;
 int iterCount = 0, feats_down_size = 0, NUM_MAX_ITERATIONS = 0, laserCloudValidNum = 0, pcd_save_interval = -1, pcd_index = 0;
 bool point_selected_surf[100000] = {0};
-bool lidar_pushed, flg_first_scan = true, flg_exit = false, flg_EKF_inited;
+bool lidar_pushed, flg_first_scan = true, flg_EKF_inited;
 bool scan_pub_en = false, dense_pub_en = false, scan_body_pub_en = false;
 bool effect_pub_en = false, map_pub_en = false, ikd_tree_pub_en = false;
 bool is_first_lidar = true;
@@ -232,13 +231,6 @@ bool locate_in_prior_map = false;
 string prior_map_path;
 FILE *fp;
 ofstream fout_pre, fout_out, fout_dbg;
-
-void SigHandle(int sig)
-{
-    flg_exit = true;
-    std::cout << "catch sig" << sig << std::endl;
-    sig_buffer.notify_all();
-}
 
 void h_share_model(state_ikfom &s, esekfom::dyn_share_datastruct<double> &ekfom_data)
 {
@@ -1374,8 +1366,6 @@ private:
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-
-    signal(SIGINT, SigHandle);
 
     rclcpp::spin(std::make_shared<LaserMappingNode>());
     /**************** save map ****************/

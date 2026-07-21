@@ -95,6 +95,10 @@ void Preprocess::process(const sensor_msgs::msg::PointCloud2::UniquePtr &msg, Po
     livox_pointcloud2_handler(msg);
     break;
 
+  case VANJEE:
+    vanjee_handler(msg);
+    break;
+
   default:
     default_handler(msg);
     break;
@@ -201,6 +205,70 @@ void Preprocess::avia_handler(const livox_ros_driver2::msg::CustomMsg::UniquePtr
   }
 }
 #endif
+
+void Preprocess::vanjee_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg)
+{
+  pl_surf.clear();
+  pl_corn.clear();
+  pl_full.clear();
+
+  pcl::PointCloud<vanjee_ros::Point> original_cloud;
+  pcl::fromROSMsg(*msg, original_cloud);
+  if (original_cloud.empty())
+    return;
+
+  const std::size_t filter_step = static_cast<std::size_t>(std::max(1, point_filter_num));
+  pl_surf.reserve(original_cloud.size() / filter_step + 1);
+
+  double scan_begin = std::numeric_limits<double>::max();
+  for (const auto &point : original_cloud.points)
+  {
+    if (std::isfinite(point.timestamp))
+      scan_begin = std::min(scan_begin, point.timestamp);
+  }
+  if (scan_begin == std::numeric_limits<double>::max())
+    return;
+
+  for (std::size_t index = 0; index < original_cloud.size(); ++index)
+  {
+    if (index % filter_step != 0)
+      continue;
+
+    const auto &source = original_cloud[index];
+    if (!std::isfinite(source.x) || !std::isfinite(source.y) ||
+        !std::isfinite(source.z) || !std::isfinite(source.timestamp))
+      continue;
+
+    const double squared_range =
+        source.x * source.x + source.y * source.y + source.z * source.z;
+    if (squared_range < blind * blind)
+      continue;
+
+    // Vanjee 的 timestamp 是每个点的绝对秒时间，FAST-LIO 的 curvature
+    // 需要保存该点相对于本帧起点的毫秒偏移。
+    const double offset_ms = (source.timestamp - scan_begin) * 1000.0;
+    if (offset_ms < 0.0 || offset_ms > 1000.0)
+      continue;
+
+    PointType point;
+    point.x = source.x;
+    point.y = source.y;
+    point.z = source.z;
+    point.intensity = source.intensity;
+    point.normal_x = 0.0f;
+    point.normal_y = 0.0f;
+    point.normal_z = 0.0f;
+    point.curvature = static_cast<float>(offset_ms);
+    pl_surf.push_back(point);
+  }
+
+  std::sort(
+      pl_surf.points.begin(), pl_surf.points.end(),
+      [](const PointType &left, const PointType &right)
+      {
+        return left.curvature < right.curvature;
+      });
+}
 
 void Preprocess::oust64_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg)
 {

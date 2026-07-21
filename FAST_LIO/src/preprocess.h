@@ -19,7 +19,8 @@ enum LID_TYPE
   VELO16,
   OUST64,
   MID360,
-  LIVOX_POINTCLOUD2
+  LIVOX_POINTCLOUD2,
+  VANJEE
 }; //{1, 2, 3}
 enum TIME_UNIT
 {
@@ -85,6 +86,24 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(velodyne_ros::Point,
                                   (float, x, x)(float, y, y)(float, z, z)(float, intensity,
                                                                           intensity)(float, time, time)(uint16_t, ring,
                                                                                                         ring))
+
+// dog3 的 Vanjee 雷达 PointCloud2 字段：
+// x/y/z/intensity(float32)、ring(uint16)、timestamp(float64)。
+namespace vanjee_ros
+{
+  struct EIGEN_ALIGN16 Point
+  {
+    PCL_ADD_POINT4D;
+    float intensity;
+    uint16_t ring;
+    double timestamp;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  };
+}
+POINT_CLOUD_REGISTER_POINT_STRUCT(vanjee_ros::Point,
+                                  (float, x, x)(float, y, y)(float, z, z)
+                                  (float, intensity, intensity)(uint16_t, ring, ring)
+                                  (double, timestamp, timestamp))
 
 namespace ouster_ros
 {
@@ -187,6 +206,7 @@ private:
 #endif
   void oust64_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg);
   void velodyne_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg);
+  void vanjee_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg);
   void mid360_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg);
   void livox_pointcloud2_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg);
   void default_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg);
