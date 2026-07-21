@@ -49,19 +49,19 @@
             odom_frame_id: "odom"    #odom_frame
 
             # 雷达传感器自身的坐标系名称。
-            sensor_frame_id: "livox_frame"
+            sensor_frame_id: "vita_lidar"
 
             # 机器人机体坐标系。当前与雷达坐标系使用相同名称。
-            base_frame_id: "livox_frame"
+            base_frame_id: "vita_lidar"
 
             # 是否由 FAST-LIO 发布 odom -> base_frame 的 TF。
             send_odom_base_tf: false
 
             # FAST-LIO 订阅的标准 PointCloud2 雷达点云话题。
-            lid_topic: "/front_lidar"
+            lid_topic: "/lidar_points"
 
             # FAST-LIO 订阅的 IMU 话题。
-            imu_topic: "/front_lidar/imu"
+            imu_topic: "/lidar_imu"
 
             # 是否由 FAST-LIO 自动估计雷达与 IMU 的时间差。
             time_sync_en: false

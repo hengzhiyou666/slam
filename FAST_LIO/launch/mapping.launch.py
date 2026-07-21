@@ -84,8 +84,8 @@ def generate_launch_description():
     #   .../install/fast_lio/share/fast_lio/config/mapping.yaml
     #
     # mapping.yaml 中包含：
-    #   - 输入点云话题 /front_lidar；
-    #   - 输入 IMU 话题 /front_lidar/imu；
+    #   - 输入点云话题 /lidar_points；
+    #   - 输入 IMU 话题 /lidar_imu；
     #   - 雷达与 IMU 的外参；
     #   - 点云滤波参数；
     #   - 地图发布和 PCD 保存开关等。
@@ -165,15 +165,15 @@ def generate_launch_description():
 
         # 话题重映射可以理解成给话题“改名字”。
         # FAST-LIO 源码原本向 /Odometry 发布里程计，
-        # 这里把外部实际看到的话题改成 /state_estimation。
+        # 这里把外部实际看到的话题改成 /mapping/odom_frame/odometry。
         #
         # 左边：程序源码中使用的原话题名。
         # 右边：运行这个 launch 文件后实际使用的话题名。
         #
         # 这个设置只是在修改输出里程计话题，
-        # 不会修改 /front_lidar 和 /front_lidar/imu 输入话题；
+        # 不会修改 /lidar_points 和 /lidar_imu 输入话题；
         # 两个输入话题是在 mapping.yaml 中设置的。
-        remappings=[('/Odometry', '/state_estimation')])
+        remappings=[('/Odometry', '/mapping/odom_frame/odometry')])
 
     # -------------------------------------------------------------------------
     # 第四步：把前面准备好的任务放进启动任务盒子

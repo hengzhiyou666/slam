@@ -35,6 +35,13 @@ MAP_PATH=/absolute/path/to/map.pcd ./2_relocalizing.sh \
   initial_x:=0.0 initial_y:=0.0 initial_z:=0.0 initial_yaw:=0.0
 ```
 
+Continuous localization outputs:
+
+```text
+/relocalizing/odom_frame/odometry  nav_msgs/msg/Odometry  frame=odom
+/relocalizing/map_frame/odometry   nav_msgs/msg/Odometry  frame=map
+```
+
 ## Notice 
 
 I'd love to hear from you if you have any suggestions or find any bugs. Please feel free to open an issue or make a pull request or contact me in any way you like.

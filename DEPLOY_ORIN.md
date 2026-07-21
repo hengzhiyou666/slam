@@ -166,8 +166,8 @@ ros2 launch fast_lio mapping.launch.py
 Expected input topics:
 
 ```text
-/front_lidar      sensor_msgs/msg/PointCloud2
-/front_lidar/imu  sensor_msgs/msg/Imu
+/lidar_points  sensor_msgs/msg/PointCloud2
+/lidar_imu     sensor_msgs/msg/Imu
 ```
 
 The PointCloud2 layout must contain:
@@ -179,9 +179,9 @@ x y z intensity tag line timestamp
 Important config values:
 
 ```yaml
-common.lid_topic: "/front_lidar"
-common.imu_topic: "/front_lidar/imu"
-common.sensor_frame_id: "livox_frame"
+common.lid_topic: "/lidar_points"
+common.imu_topic: "/lidar_imu"
+common.sensor_frame_id: "vita_lidar"
 preprocess.lidar_type: 5
 preprocess.scan_line: 4
 preprocess.timestamp_unit: 3
@@ -246,7 +246,7 @@ Watch these RViz topics:
 /cloud_registered_body
 /Laser_map
 /path
-/state_estimation
+/mapping/odom_frame/odometry
 /tf
 ```
 
@@ -289,7 +289,8 @@ Useful topics:
 /prior_map
 /transformed_cloud
 /icp_result
-/state_estimation
+/relocalizing/odom_frame/odometry
+/relocalizing/map_frame/odometry
 /cloud_registered
 /cloud_registered_body
 /tf
@@ -464,8 +465,8 @@ source ~/ws_livox/install/setup.bash
 source ~/robot_ws/install/setup.bash
 
 ros2 topic list
-ros2 topic echo /front_lidar --once --field header
-ros2 topic echo /front_lidar/imu --once --field header
+ros2 topic echo /lidar_points --once --field header
+ros2 topic echo /lidar_imu --once --field header
 ```
 
 Mapping:
@@ -483,8 +484,9 @@ ros2 launch fast_lio relocalizing.launch.py map_path:=$HOME/maps/map.pcd
 Health checks:
 
 ```bash
-ros2 topic hz /state_estimation
-ros2 topic echo /state_estimation --once
+ros2 topic hz /relocalizing/odom_frame/odometry
+ros2 topic hz /relocalizing/map_frame/odometry
+ros2 topic echo /relocalizing/map_frame/odometry --once
 ros2 run tf2_ros tf2_echo map odom
 ```
 

@@ -17,6 +17,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -38,7 +39,17 @@ if(USE_LIVOX)
 endif()
 
 add_executable(transform_publisher src/transform_publisher.cpp)
-ament_target_dependencies(transform_publisher rclcpp std_msgs geometry_msgs tf2 tf2_ros tf2_geometry_msgs pcl_ros)
+ament_target_dependencies(
+  transform_publisher
+  rclcpp
+  std_msgs
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  pcl_ros
+)
 
 
 add_executable(sac_ia_gicp

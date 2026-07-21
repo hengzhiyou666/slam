@@ -3,10 +3,10 @@ import os
 # 本文件用于启动“先验地图定位”流程，主要包含三个节点：
 # 1. icp_node：将当前雷达点云与已有 PCD 地图配准，计算初始位置；
 # 2. fastlio_mapping：读取 ICP 结果，在已有地图中持续定位；
-# 3. transform_publisher：根据 ICP 结果发布 map -> odom 坐标变换。
+# 3. transform_publisher：发布 map -> odom TF，并把 odom 位姿转换到 map。
 #
 # 运行入口通常是：
-#   ./2_localizing.sh
+#   ./2_relocalizing.sh
 # 该脚本会把地图路径通过 map_path 参数传进来。
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -47,11 +47,19 @@ def generate_launch_description():
     declare_initial_z = DeclareLaunchArgument('initial_z', default_value='0.0')
     declare_initial_yaw = DeclareLaunchArgument('initial_yaw', default_value='0.0')
 
-    # 发布 map -> odom 坐标变换，使定位结果能够接入完整 TF 坐标树。
+    # 发布 map -> odom 坐标变换，并将 FAST-LIO 的连续里程计转换到 map。
     map_odom_trans = Node(
         package='icp_relocalization',
         executable='transform_publisher',
         name='transform_publisher',
+        parameters=[
+            {'map_frame_id': 'map'},
+            {'odom_frame_id': 'odom'},
+            {'sensor_frame_id': 'vita_lidar'},
+            {'icp_result_topic': '/icp_result'},
+            {'input_odometry_topic': '/relocalizing/odom_frame/odometry'},
+            {'output_odometry_topic': '/relocalizing/map_frame/odometry'},
+        ],
         output='screen')
 
     # ICP 初始定位节点：用实时点云与先验 PCD 地图进行匹配。
@@ -80,9 +88,9 @@ def generate_launch_description():
             {'fitness_score_thre': 0.05},
             {'converged_count_thre': 5},
 
-            # 机器狗雷达发布标准 PointCloud2，话题为 /front_lidar。
+            # 机器狗雷达发布标准 PointCloud2，话题为 /lidar_points。
             {'pcl_type': 'pointcloud2'},
-            {'pointcloud_topic': '/front_lidar'},
+            {'pointcloud_topic': '/lidar_points'},
         ])
 
     # FAST-LIO 定位节点：加载 relocalizing.yaml，并使用同一张先验地图。
@@ -94,7 +102,8 @@ def generate_launch_description():
             {'prior_map_path': map_path},
         ],
         output='screen',
-        remappings=[('/Odometry', '/state_estimation')])
+        # 定位模式持续输出：vita_lidar 相对于 odom 的里程计。
+        remappings=[('/Odometry', '/relocalizing/odom_frame/odometry')])
 
     # 等待 5 秒再启动 ICP 和 FAST-LIO，让坐标变换等基础组件先准备好。
     delayed_start_lio = TimerAction(
