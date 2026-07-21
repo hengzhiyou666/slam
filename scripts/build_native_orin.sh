@@ -2,30 +2,27 @@
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-ROS_DISTRO_TARGET=${ROS_DISTRO_TARGET:-humble}
-LIVOX_SETUP=${LIVOX_SETUP:-$HOME/ws_livox/install/setup.bash}
 WORKERS=${WORKERS:-1}
 MAKE_JOBS=${MAKE_JOBS:-2}
 
-if [[ ! -f "/opt/ros/$ROS_DISTRO_TARGET/setup.bash" ]]; then
-  echo "[build_native_orin] ERROR: missing /opt/ros/$ROS_DISTRO_TARGET/setup.bash" >&2
-  exit 1
-fi
 set +u
-source "/opt/ros/$ROS_DISTRO_TARGET/setup.bash"
+source "$ROOT_DIR/setup_env.sh"
 set -u
 
-if [[ -f "$LIVOX_SETUP" ]]; then
-  set +u
-  source "$LIVOX_SETUP"
-  set -u
-else
-  echo "[build_native_orin] WARNING: Livox setup not found: $LIVOX_SETUP" >&2
+EXTRA_CMAKE_ARGS=(
+  -DCMAKE_BUILD_TYPE=Release
+  -DUSE_LIVOX_CUSTOM_MSG=OFF
+  -DUSE_LIVOX=OFF
+  -DBUILD_SAC_IA_GICP=OFF
+)
+if [[ -d "$ROOT_DIR/.deps/root/usr" ]]; then
+  EXTRA_CMAKE_ARGS+=("-DOMNI_SLAM_DEPS_ROOT=$ROOT_DIR/.deps/root")
 fi
 
 cd "$ROOT_DIR"
 MAKEFLAGS="-j$MAKE_JOBS" colcon build \
   --symlink-install \
   --parallel-workers "$WORKERS" \
+  --base-paths FAST_LIO icp_relocalization \
   --packages-select fast_lio icp_relocalization \
-  --cmake-args -DCMAKE_BUILD_TYPE=Release
+  --cmake-args "${EXTRA_CMAKE_ARGS[@]}"

@@ -43,7 +43,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <Python.h>
 #include <so3_math.h>
 #include <rclcpp/rclcpp.hpp>
 #include <Eigen/Core>
@@ -51,12 +50,12 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-#include <pcl_conversions/pcl_conversions.h>
+#include "ros_pcl_conversion.hpp"
+#include "simple_pcd_io.hpp"
+#include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl_ros/transforms.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <std_srvs/srv/trigger.hpp>
@@ -156,14 +155,10 @@ static bool save_cloud_to_pcd(const string &path, const PointCloudXYZI::Ptr &clo
         cerr << "Failed to create PCD directory: " << dir << endl;
         return false;
     }
-    try
+    string error;
+    if (!omni_slam::pcd::save_xyzinormal_binary(path, *cloud, &error))
     {
-        pcl::PCDWriter pcd_writer;
-        pcd_writer.writeBinary(path, *cloud);
-    }
-    catch (const pcl::IOException &e)
-    {
-        cerr << "Failed to save PCD to " << path << ": " << e.what() << endl;
+        cerr << "Failed to save PCD to " << path << ": " << error << endl;
         return false;
     }
     return true;
@@ -546,9 +541,12 @@ public:
         {
             RCLCPP_INFO(this->get_logger(), "Loading prior map...");
             // load prior map
-            if (pcl::io::loadPCDFile<PointType>(prior_map_path, *prior_map) == -1) // Replace with your file name
+            string pcd_error;
+            if (!omni_slam::pcd::load_xyzinormal(prior_map_path, *prior_map, &pcd_error))
             {
-                RCLCPP_ERROR(this->get_logger(), "Failed to load PCD file\n");
+                RCLCPP_ERROR(
+                    this->get_logger(), "Failed to load PCD file %s: %s",
+                    prior_map_path.c_str(), pcd_error.c_str());
                 return;
             }
             // downsample the prior map
@@ -1208,7 +1206,18 @@ private:
                     // }
                     tf2::Transform trans;
                     tf2::fromMsg(initial_pose.pose.pose, trans);
-                    pcl_ros::transformPointCloud(*feats_down_prior_map, *feats_down_prior_map, trans.inverse());
+                    const tf2::Transform inverse_trans = trans.inverse();
+                    Eigen::Matrix4f transform_matrix = Eigen::Matrix4f::Identity();
+                    for (int row = 0; row < 3; ++row)
+                    {
+                        for (int column = 0; column < 3; ++column)
+                        {
+                            transform_matrix(row, column) = inverse_trans.getBasis()[row][column];
+                        }
+                        transform_matrix(row, 3) = inverse_trans.getOrigin()[row];
+                    }
+                    pcl::transformPointCloud(
+                        *feats_down_prior_map, *feats_down_prior_map, transform_matrix);
 
                     // puiblish the transformed prior map
                     sensor_msgs::msg::PointCloud2 prior_map_msg;

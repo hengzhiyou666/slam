@@ -1,10 +1,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <pcl_conversions/pcl_conversions.h>
+#include "ros_pcl_conversion.hpp"
+#include "simple_pcd_io.hpp"
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/registration/icp.h>
 #include <pcl/filters/voxel_grid.h>
 #include <Eigen/Geometry>
@@ -98,9 +98,12 @@ public:
         }
         RCLCPP_INFO(this->get_logger(), "Initial guess: \n x: %f, y: %f, z: %f, a: %f", initial_x, initial_y, initial_z, initial_a);
         // Load the target point cloud from a PCD file
-        if (pcl::io::loadPCDFile<pcl::PointXYZ>(map_path, *target_cloud_) == -1)
+        std::string pcd_error;
+        if (!omni_slam::pcd::load_xyz(map_path, *target_cloud_, &pcd_error))
         {
-            RCLCPP_FATAL(this->get_logger(), "Couldn't read map file: %s", map_path.c_str());
+            RCLCPP_FATAL(
+                this->get_logger(), "Couldn't read map file %s: %s",
+                map_path.c_str(), pcd_error.c_str());
             throw std::runtime_error("failed to load ICP map");
         }
         RCLCPP_INFO(this->get_logger(), "Loaded %d data points from target.pcd", target_cloud_->width * target_cloud_->height);

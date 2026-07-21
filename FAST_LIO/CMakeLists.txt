@@ -43,9 +43,6 @@ find_package(OpenMP QUIET)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
 
-find_package(PythonLibs REQUIRED)
-find_path(MATPLOTLIB_CPP_INCLUDE_DIRS "matplotlibcpp.h")
-
 # ROS dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -56,8 +53,9 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(visualization_msgs REQUIRED)
-find_package(pcl_ros REQUIRED)
-find_package(pcl_conversions REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 option(USE_LIVOX_CUSTOM_MSG "Build Livox CustomMsg support" OFF)
@@ -75,17 +73,33 @@ set(dependencies
   std_msgs
   std_srvs
   visualization_msgs
-  pcl_ros
-  pcl_conversions
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
 )
 
 if(USE_LIVOX_CUSTOM_MSG)
   list(APPEND dependencies livox_ros_driver2)
 endif()
 
-# Thirdparty libraries
+# Third-party libraries. dog3 把 PCL/Eigen 解压在工程私有的 .deps 中，
+# 电脑环境则继续使用系统安装的 PCL CMake 包。
+set(OMNI_SLAM_DEPS_ROOT "" CACHE PATH "Private dependency root used on dog3")
 find_package(Eigen3 REQUIRED)
-find_package(PCL REQUIRED COMPONENTS common io)
+if(OMNI_SLAM_DEPS_ROOT)
+  set(PCL_INCLUDE_DIRS
+    "${OMNI_SLAM_DEPS_ROOT}/usr/include/pcl-1.12"
+    "${OMNI_SLAM_DEPS_ROOT}/usr/include"
+  )
+  set(OMNI_PCL_LIBRARY_DIR "${OMNI_SLAM_DEPS_ROOT}/usr/lib/aarch64-linux-gnu")
+  find_library(PCL_COMMON_LIBRARY pcl_common
+    PATHS "${OMNI_PCL_LIBRARY_DIR}" NO_DEFAULT_PATH REQUIRED)
+  find_library(PCL_FILTERS_LIBRARY pcl_filters
+    PATHS "${OMNI_PCL_LIBRARY_DIR}" NO_DEFAULT_PATH REQUIRED)
+  set(PCL_LIBRARIES ${PCL_FILTERS_LIBRARY} ${PCL_COMMON_LIBRARY})
+else()
+  find_package(PCL REQUIRED COMPONENTS common filters)
+endif()
 
 message(Eigen: ${EIGEN3_INCLUDE_DIR})
 message(STATUS "PCL: ${PCL_INCLUDE_DIRS}")
@@ -102,11 +116,16 @@ ament_export_dependencies(rosidl_default_runtime)
 add_executable(fastlio_mapping src/laserMapping.cpp include/ikd-Tree/ikd_Tree.cpp src/preprocess.cpp)
 target_include_directories(fastlio_mapping PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../common>
   $<INSTALL_INTERFACE:include>
   ${PCL_INCLUDE_DIRS}
 )
-target_link_libraries(fastlio_mapping ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} Eigen3::Eigen)
-target_include_directories(fastlio_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
+target_link_libraries(fastlio_mapping ${PCL_LIBRARIES} Eigen3::Eigen)
+if(OMNI_SLAM_DEPS_ROOT)
+  set_target_properties(fastlio_mapping PROPERTIES
+    BUILD_RPATH "${OMNI_PCL_LIBRARY_DIR}"
+    INSTALL_RPATH "${OMNI_PCL_LIBRARY_DIR}")
+endif()
 
 list(APPEND EOL_LIST "foxy" "galactic" "eloquent" "dashing" "crystal")
 
