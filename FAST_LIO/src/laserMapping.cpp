@@ -372,9 +372,9 @@ public:
         this->declare_parameter<string>("common.imu_topic", "/livox/imu");
         this->declare_parameter<bool>("common.time_sync_en", false);
         this->declare_parameter<double>("common.time_offset_lidar_to_imu", 0.0);
-        this->declare_parameter<string>("common.odom_frame_id", "odom");
-        this->declare_parameter<string>("common.sensor_frame_id", "sensor");
-        this->declare_parameter<string>("common.base_frame_id", "base_frame");
+        this->declare_parameter<string>("common.odom_frame_id", "odom_frame");
+        this->declare_parameter<string>("common.sensor_frame_id", "lidar_frame");
+        this->declare_parameter<string>("common.base_frame_id", "lidar_frame");
         this->declare_parameter<bool>("common.send_odom_base_tf", false);
         this->declare_parameter<double>("filter_size_corner", 0.5);
         this->declare_parameter<double>("filter_size_surf", 0.5);
@@ -414,9 +414,9 @@ public:
         this->get_parameter_or<string>("common.lid_topic", lid_topic, "/livox/lidar");
         this->get_parameter_or<string>("common.imu_topic", imu_topic, "/livox/imu");
         this->get_parameter_or<bool>("common.time_sync_en", time_sync_en, false);
-        this->get_parameter_or<string>("common.odom_frame_id", odom_frame, "odom");
-        this->get_parameter_or<string>("common.sensor_frame_id", sensor_frame, "sensor");
-        this->get_parameter_or<string>("common.base_frame_id", base_frame, "base_frame");
+        this->get_parameter_or<string>("common.odom_frame_id", odom_frame, "odom_frame");
+        this->get_parameter_or<string>("common.sensor_frame_id", sensor_frame, "lidar_frame");
+        this->get_parameter_or<string>("common.base_frame_id", base_frame, "lidar_frame");
         this->get_parameter_or<bool>("common.send_odom_base_tf", send_odom_base_tf, false);
         this->get_parameter_or<double>("common.time_offset_lidar_to_imu", time_diff_lidar_to_imu, 0.0);
         this->get_parameter_or<double>("filter_size_corner", filter_size_corner_min, 0.5);

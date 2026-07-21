@@ -47,15 +47,16 @@ def generate_launch_description():
     declare_initial_z = DeclareLaunchArgument('initial_z', default_value='0.0')
     declare_initial_yaw = DeclareLaunchArgument('initial_yaw', default_value='0.0')
 
-    # 发布 map -> odom 坐标变换，并将 FAST-LIO 的连续里程计转换到 map。
+    # 发布 map_frame -> odom_frame 坐标变换，并将 FAST-LIO 的连续里程计
+    # 转换到 map_frame。
     map_odom_trans = Node(
         package='icp_relocalization',
         executable='transform_publisher',
         name='transform_publisher',
         parameters=[
-            {'map_frame_id': 'map'},
-            {'odom_frame_id': 'odom'},
-            {'sensor_frame_id': 'vita_lidar'},
+            {'map_frame_id': 'map_frame'},
+            {'odom_frame_id': 'odom_frame'},
+            {'sensor_frame_id': 'lidar_frame'},
             {'icp_result_topic': '/icp_result'},
             {'input_odometry_topic': '/relocalizing/odom_frame/odometry'},
             {'output_odometry_topic': '/relocalizing/map_frame/odometry'},
@@ -78,7 +79,7 @@ def generate_launch_description():
             # ICP 点云降采样与匹配参数。
             {'map_voxel_leaf_size': 0.2},
             {'cloud_voxel_leaf_size': 0.2},
-            {'map_frame_id': 'map'},
+            {'map_frame_id': 'map_frame'},
             {'solver_max_iter': 100},
             {'max_correspondence_distance': 1.0},
             {'RANSAC_outlier_rejection_threshold': 0.5},
@@ -102,8 +103,11 @@ def generate_launch_description():
             {'prior_map_path': map_path},
         ],
         output='screen',
-        # 定位模式持续输出：vita_lidar 相对于 odom 的里程计。
-        remappings=[('/Odometry', '/relocalizing/odom_frame/odometry')])
+        # 定位模式持续输出：lidar_frame 相对于 odom_frame 的里程计。
+        remappings=[
+            ('/Odometry', '/relocalizing/odom_frame/odometry'),
+            ('/path', '/relocalizing/odom_frame/path'),
+        ])
 
     # 等待 5 秒再启动 ICP 和 FAST-LIO，让坐标变换等基础组件先准备好。
     delayed_start_lio = TimerAction(

@@ -164,16 +164,19 @@ def generate_launch_description():
         output='screen',
 
         # 话题重映射可以理解成给话题“改名字”。
-        # FAST-LIO 源码原本向 /Odometry 发布里程计，
-        # 这里把外部实际看到的话题改成 /mapping/odom_frame/odometry。
+        # FAST-LIO 源码原本向 /Odometry 和 /path 发布结果，
+        # 这里把建图输出放到独立的 /mapping 命名空间。
         #
         # 左边：程序源码中使用的原话题名。
         # 右边：运行这个 launch 文件后实际使用的话题名。
         #
-        # 这个设置只是在修改输出里程计话题，
+        # 这些设置只修改输出话题，
         # 不会修改 /lidar_points 和 /lidar_imu 输入话题；
         # 两个输入话题是在 mapping.yaml 中设置的。
-        remappings=[('/Odometry', '/mapping/odom_frame/odometry')])
+        remappings=[
+            ('/Odometry', '/mapping/map_frame/odometry'),
+            ('/path', '/mapping/map_frame/path'),
+        ])
 
     # -------------------------------------------------------------------------
     # 第四步：把前面准备好的任务放进启动任务盒子

@@ -108,7 +108,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "Target FPFH feature computed");
 
         pcl::toROSMsg(*vg_target_cloud_, target_cloud_msg);
-        target_cloud_msg.header.frame_id = "map";
+        target_cloud_msg.header.frame_id = "map_frame";
     }
 
 private:
@@ -225,7 +225,7 @@ private:
                 Eigen::Matrix4f transformation = icp.getFinalTransformation();
                 geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
                 pose_msg.header.stamp = this->now();
-                pose_msg.header.frame_id = "map";
+                pose_msg.header.frame_id = "map_frame";
                 pose_msg.pose.pose.position.x = transformation(0, 3);
                 pose_msg.pose.pose.position.y = transformation(1, 3);
                 pose_msg.pose.pose.position.z = transformation(2, 3);
@@ -260,7 +260,7 @@ private:
         sensor_msgs::msg::PointCloud2 icp_cloud_msg;
         pcl::toROSMsg(*icp_cloud, icp_cloud_msg);
         icp_cloud_msg.header.stamp = this->now();
-        icp_cloud_msg.header.frame_id = "map";
+        icp_cloud_msg.header.frame_id = "map_frame";
         pcd_publisher_->publish(icp_cloud_msg);
 
         target_cloud_msg.header.stamp = this->now();

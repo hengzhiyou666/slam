@@ -91,10 +91,10 @@ public:
   TransformPublisherNode()
   : Node("transform_publisher_node")
   {
-    map_frame_id_ = declare_parameter<std::string>("map_frame_id", "map");
-    odom_frame_id_ = declare_parameter<std::string>("odom_frame_id", "odom");
+    map_frame_id_ = declare_parameter<std::string>("map_frame_id", "map_frame");
+    odom_frame_id_ = declare_parameter<std::string>("odom_frame_id", "odom_frame");
     sensor_frame_id_ =
-      declare_parameter<std::string>("sensor_frame_id", "vita_lidar");
+      declare_parameter<std::string>("sensor_frame_id", "lidar_frame");
     icp_result_topic_ =
       declare_parameter<std::string>("icp_result_topic", "/icp_result");
     input_odometry_topic_ = declare_parameter<std::string>(

@@ -45,19 +45,19 @@
         # 输入话题、坐标系和时间同步
         # ---------------------------------------------------------------------
         common:
-            # odom_frame_id 是“参数名称”，右边的 odom 是“TF 坐标系名称”。
-            # ROS 通常使用标准 TF 结构：map -> odom -> base_link。
-            # 虽然可以把 odom 改成其他名字，但相关节点必须同步修改；
-            # 为兼容导航、可视化等常用 ROS 程序，这里保留标准名称 odom。
-            odom_frame_id: "odom"    #odom_frame
+            # FAST-LIO 沿用 odom_frame_id 这个参数名，但建图时它实际表示
+            # 整张地图的世界坐标系，因此这里使用自研坐标系 map_frame。
+            odom_frame_id: "map_frame"
 
-            # 雷达传感器自身的坐标系名称。
-            sensor_frame_id: "vita_lidar"
+            # 自研 SLAM 使用的雷达坐标系名称。
+            # dog3 原始消息虽然写的是 vita_lidar，但当前 FAST-LIO 直接读取
+            # 点云坐标，不依赖原厂 TF，因此在自研 TF 树中统一命名为 lidar_frame。
+            sensor_frame_id: "lidar_frame"
 
-            # 机器人机体坐标系。当前配置中与雷达坐标系相同。
-            base_frame_id: "vita_lidar"
+            # 当前直接输出雷达位姿，所以机体坐标系暂时与雷达坐标系相同。
+            base_frame_id: "lidar_frame"
 
-            # 是否由 FAST-LIO 发布 odom -> base_frame 的 TF。
+            # false：发布 map_frame -> lidar_frame。
             send_odom_base_tf: false
 
             # 输入的标准 PointCloud2 雷达点云话题。
@@ -133,7 +133,7 @@
         # ROS 话题发布开关
         # ---------------------------------------------------------------------
         publish:
-            # 发布机器人运动轨迹 /path。
+            # 发布机器人运动轨迹；launch 会输出为 /mapping/map_frame/path。
             path_en: true
 
             # 发布参与匹配的有效点云 /cloud_effected。

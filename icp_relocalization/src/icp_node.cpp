@@ -33,7 +33,7 @@ public:
         this->declare_parameter("max_correspondence_distance", 0.1);
         this->declare_parameter("RANSAC_outlier_rejection_threshold", 1.0);
         this->declare_parameter("map_path", "");
-        this->declare_parameter("map_frame_id", "map");
+        this->declare_parameter("map_frame_id", "map_frame");
         this->declare_parameter("fitness_score_thre", 0.0);
         this->declare_parameter("map_voxel_leaf_size", 0.1);
         this->declare_parameter("cloud_voxel_leaf_size", 0.1);
